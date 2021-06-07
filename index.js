@@ -1,34 +1,7 @@
 const Chance = require("chance");
 const chance = new Chance();
 const crypto = require("crypto");
-
-/**
- * Convert seeds to decimal number
- *
- * @param  {...string} params Public seed and client seed/seeds
- * @returns Number
- */
-const hexToDecimal = (...params) => {
-  const hash = crypto
-    .createHash("sha512")
-    .update(params.join(""))
-    .digest("hex");
-  return parseInt(hash.substr(0, 13), 16);
-};
-
-/**
- * Get decimal mod max + min
- *
- * @param {number} min Min number
- * @param {number} max Max number
- * @param  {...string} params Public seed and client seed/seeds
- * @returns
- */
-const getRandomNumber = (min, max, ...params) => {
-  const decimal = hexToDecimal(...params);
-  const randomNum = (decimal % max) + min;
-  return randomNum;
-};
+const { getRandomNumber, getRandomXForCrash } = require('./random')
 
 /**
  * JACKPOT MODE
@@ -263,10 +236,10 @@ console.log("********************************************");
 console.log("\n");
 
 class PlayerDice {
-  constructor(amount, randNumber) {
+  constructor(amount, randChance) {
     this.seed = chance.string({ length: 20 });
     this.amount = amount;
-    this.randNumber = randNumber;
+    this.randChance = randChance;
     this.gain = 0;
   }
 
@@ -274,8 +247,8 @@ class PlayerDice {
     return this.amount;
   }
 
-  getRandNumber() {
-    return this.randNumber;
+  getRandChance() {
+    return this.randChance;
   }
 
   getSeed() {
@@ -291,7 +264,7 @@ class PlayerDice {
   }
 
   toString() {
-    return `Player: bet ${this.bet}$, number ${this.randNumber}`;
+    return `Player: bet ${this.bet}$, chance ${this.randChance}`;
   }
 }
 
@@ -308,21 +281,20 @@ class Dice {
   drawForPlayer(player) {
     const randomNum = getRandomNumber(
       0,
-      10000,
+      999999,
       this.seed,
       player.getSeed(),
       this.roundId.toString()
     );
-    const result = randomNum / 100;
-    if (result < player.getRandNumber()) {
-      const x = 96 / player.getRandNumber();
+    const maxNumber = 1000000 * (player.getRandChance() / 100) - 1;
+    if (randomNum < maxNumber) {
+      const x = 96 / player.getRandChance();
       const gain = player.getAmount() * x;
       player.setGain(gain);
     }
     console.log(`===============Round ID: ${this.roundId}================`);
     console.log("Bet amount: ", player.getAmount());
-    console.log("Bet number: ", player.getRandNumber());
-    console.log("Round result: ", result);
+    console.log("Bet chance: ", player.getRandChance());
     console.log("Gain: ", player.getGain());
   }
 }
@@ -335,8 +307,8 @@ const diceInstance = new Dice();
 for (let i = 1; i <= 10; i++) {
   diceInstance.generateRound();
   const amount = Math.ceil(Math.random() * 100);
-  const randNumber = Math.ceil(Math.random() * 9500) / 100 + 1;
-  const player = new PlayerDice(amount, randNumber);
+  const randChance = Math.floor(Math.random() * 9400) / 100 + 1;
+  const player = new PlayerDice(amount, randChance);
   diceInstance.drawForPlayer(player);
 }
 console.log("\n");
@@ -427,8 +399,8 @@ class Roulette {
       roundNumber === 0
         ? 0
         : [1, 2, 3, 4, 5, 6, 7].includes(roundNumber)
-        ? 1
-        : 2;
+          ? 1
+          : 2;
     let sumAmount = 0;
     let sumGain = 0;
     for (let player of this.players) {
@@ -533,13 +505,9 @@ class Crash {
 
   drawRound() {
     const firstTwoPlayers = this.players.slice(0, 2);
-    const randomNumber = hexToDecimal(
+    const randomX = getRandomXForCrash(
       this.roundSeed,
       ...firstTwoPlayers.map((p) => p.getSeed())
-    );
-    const x = Math.max(
-      1,
-      Math.floor(97 / (1 - randomNumber / Math.pow(2, 52))) / 100
     );
 
     let sumAmount = 0;
@@ -547,11 +515,11 @@ class Crash {
     for (let player of this.players) {
       sumAmount += player.getAmount();
       const gain =
-        x == 1
+        randomX == 1
           ? 0
-          : player.getFinishX() <= x
-          ? player.getAmount() * player.getFinishX()
-          : 0;
+          : player.getFinishX() <= randomX
+            ? player.getAmount() * player.getFinishX()
+            : 0;
       player.setGain(gain);
       sumGain += gain;
     }
