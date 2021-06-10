@@ -281,7 +281,7 @@ class Dice {
   drawForPlayer(player) {
     const randomNum = getRandomNumber(
       0,
-      1000000,
+      999999,
       this.seed,
       player.getSeed(),
       this.roundId.toString()
@@ -390,7 +390,7 @@ class Roulette {
     const firstTwoPlayers = this.players.slice(0, 2);
     const roundNumber = getRandomNumber(
       0,
-      15,
+      14,
       this.roundSeed,
       ...firstTwoPlayers.map((p) => p.getSeed())
     );
