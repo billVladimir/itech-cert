@@ -24,7 +24,7 @@ const hexToDecimal = (...params) => {
  */
 const getRandomNumber = (min, max, ...params) => {
     const decimal = hexToDecimal(...params);
-    const randomNum = (decimal % (max + 1 - min)) + min;
+    const randomNum = (decimal % (max - min + 1)) + min;
     return randomNum;
 };
 

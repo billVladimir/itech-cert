@@ -80,7 +80,7 @@ class Jackpot {
     const randomNum = getRandomNumber(
       1,
       this.tickets,
-      this.seed,
+      this.roundSeed,
       ...firstTwoPlayers.map((p) => p.seed)
     );
     const winPlayer = this.players.find(
@@ -188,7 +188,7 @@ class Coinflip {
     const randomNum = getRandomNumber(
       1,
       this.tickets,
-      this.seed,
+      this.roundSeed,
       ...this.players.map((p) => p.seed)
     );
     const winPlayer = this.players.find(
